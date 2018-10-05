@@ -5,7 +5,7 @@ namespace LaraComponents\Centrifuge;
 use Exception;
 use Predis\PredisException;
 use Predis\Client as RedisClient;
-use GuzzleHttp\Client;
+use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
 use LaraComponents\Centrifuge\Contracts\Centrifuge as CentrifugeContract;
 
@@ -39,19 +39,15 @@ class Centrifuge implements CentrifugeContract
 	 * Create a new Centrifuge instance.
 	 *
 	 * @param array               $config
-	 * @param \GuzzleHttp\Client  $httpClient
+	 * @param HttpClient  $httpClient
 	 * @param \Predis\Client|null $redisClient
 	 */
-	public function __construct(array $config = [], $httpClient = null, ?RedisClient $redisClient = null)
+	public function __construct(
+		array $config = [],
+		HttpClient $httpClient = null,
+		?RedisClient $redisClient = null)
 	{
-		$config['url'] = env('CENTRIFUGE_URL');
-
-		if (empty($httpClient)) {
-			$this->httpClient = new Client();
-		} else {
-			$this->httpClient = $httpClient;
-		}
-
+		$this->httpClient = $httpClient;
 		$this->redisClient = $redisClient;
 
 		$this->config = $this->initConfiguration($config);
