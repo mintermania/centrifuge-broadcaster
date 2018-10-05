@@ -72,6 +72,8 @@ interface Centrifuge
     public function stats();
 
     /**
+     * @deprecated https://centrifugal.github.io/centrifugo/misc/migrate/
+     * TODO replace for JWT generation
      * Generate token.
      *
      * @param string $userOrClient
@@ -79,7 +81,7 @@ interface Centrifuge
      * @param string $info
      * @return string
      */
-    public function generateToken($userOrClient, $timestampOrChannel, $info = '');
+    //public function generateToken($userOrClient, $timestampOrChannel, $info = '');
 
     /**
      * Generate api sign.

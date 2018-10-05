@@ -5,354 +5,373 @@ namespace LaraComponents\Centrifuge;
 use Exception;
 use Predis\PredisException;
 use Predis\Client as RedisClient;
-use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use LaraComponents\Centrifuge\Contracts\Centrifuge as CentrifugeContract;
 
 class Centrifuge implements CentrifugeContract
 {
-    const REDIS_SUFFIX = '.api';
+	const REDIS_SUFFIX = '.api';
 
-    const API_PATH = '/api';
+	const API_PATH = '/api';
 
-    /**
-     * @var \GuzzleHttp\Client
-     */
-    protected $httpClient;
+	/**
+	 * @var \GuzzleHttp\Client
+	 */
+	protected $httpClient;
 
-    /**
-     * @var \Predis\Client
-     */
-    protected $redisClient;
+	/**
+	 * @var \Predis\Client
+	 */
+	protected $redisClient;
 
-    /**
-     * @var array
-     */
-    protected $config;
+	/**
+	 * @var array
+	 */
+	protected $config;
 
-    /**
-     * @var array
-     */
-    protected $redisMethods = ['publish', 'broadcast', 'unsubscribe', 'disconnect'];
+	/**
+	 * @var array
+	 */
+	protected $redisMethods = ['publish', 'broadcast', 'unsubscribe', 'disconnect'];
 
-    /**
-     * Create a new Centrifuge instance.
-     *
-     * @param array $config
-     * @param \GuzzleHttp\Client $httpClient
-     * @param \Predis\Client|null $redisClient
-     */
-    public function __construct(array $config, HttpClient $httpClient, RedisClient $redisClient = null)
-    {
-        $this->httpClient = $httpClient;
-        $this->redisClient = $redisClient;
+	/**
+	 * Create a new Centrifuge instance.
+	 *
+	 * @param array               $config
+	 * @param \GuzzleHttp\Client  $httpClient
+	 * @param \Predis\Client|null $redisClient
+	 */
+	public function __construct(array $config = [], $httpClient = null, ?RedisClient $redisClient = null)
+	{
+		$config['url'] = env('CENTRIFUGE_URL');
 
-        $this->config = $this->initConfiguration($config);
-    }
+		if (is_null($httpClient)) {
+			$this->httpClient = new Client();
+		}
 
-    /**
-     * Init centrifuge configuration.
-     *
-     * @param  array $config
-     * @return array
-     */
-    protected function initConfiguration(array $config)
-    {
-        $defaults = [
-            'url'              => 'http://localhost:8000',
-            'secret'           => null,
-            'redis_api'        => false,
-            'redis_prefix'     => 'centrifugo',
-            'redis_num_shards' => 0,
-            'ssl_key'          => null,
-            'verify'           => true,
-        ];
+		$this->redisClient = $redisClient;
 
-        foreach ($config as $key => $value) {
-            if (array_key_exists($key, $defaults)) {
-                $defaults[$key] = $value;
-            }
-        }
+		$this->config = $this->initConfiguration($config);
+	}
 
-        return $defaults;
-    }
+	/**
+	 * Init centrifuge configuration.
+	 *
+	 * @param  array $config
+	 *
+	 * @return array
+	 */
+	protected function initConfiguration(array $config)
+	{
+		$defaults = [
+			'url'              => 'http://127.0.0.1:8000',
+			'secret'           => null,
+			'redis_api'        => false,
+			'redis_prefix'     => 'centrifugo',
+			'redis_num_shards' => 0,
+			'ssl_key'          => null,
+			'verify'           => true,
+		];
 
-    /**
-     * Send message into channel.
-     *
-     * @param string $channel
-     * @param array $data
-     * @param string $client
-     * @return mixed
-     */
-    public function publish($channel, array $data, $client = null)
-    {
-        $params = ['channel' => $channel, 'data' => $data];
+		foreach ($config as $key => $value) {
+			if (array_key_exists($key, $defaults)) {
+				$defaults[$key] = $value;
+			}
+		}
 
-        if (! is_null($client)) {
-            $params['client'] = $client;
-        }
+		return $defaults;
+	}
 
-        return $this->send('publish', $params);
-    }
+	/**
+	 * Send message into channel.
+	 *
+	 * @param string $channel
+	 * @param array  $data
+	 * @param string $client
+	 *
+	 * @return mixed
+	 */
+	public function publish($channel, array $data, $client = null)
+	{
+		$params = ['channel' => $channel, 'data' => $data];
 
-    /**
-     * Send message into multiple channel.
-     *
-     * @param array $channels
-     * @param array $data
-     * @param string $client
-     * @return mixed
-     */
-    public function broadcast(array $channels, array $data, $client = null)
-    {
-        $params = ['channels' => $channels, 'data' => $data];
+		if (!is_null($client)) {
+			$params['client'] = $client;
+		}
 
-        if (! is_null($client)) {
-            $params['client'] = $client;
-        }
+		return $this->send('publish', $params);
+	}
 
-        return $this->send('broadcast', $params);
-    }
+	/**
+	 * Send message into multiple channel.
+	 *
+	 * @param array  $channels
+	 * @param array  $data
+	 * @param string $client
+	 *
+	 * @return mixed
+	 */
+	public function broadcast(array $channels, array $data, $client = null)
+	{
+		$params = ['channels' => $channels, 'data' => $data];
 
-    /**
-     * Get channel presence information (all clients currently subscribed on this channel).
-     *
-     * @param string $channel
-     * @return mixed
-     */
-    public function presence($channel)
-    {
-        return $this->send('presence', ['channel' => $channel]);
-    }
+		if (!is_null($client)) {
+			$params['client'] = $client;
+		}
 
-    /**
-     * Get channel history information (list of last messages sent into channel).
-     *
-     * @param string $channel
-     * @return mixed
-     */
-    public function history($channel)
-    {
-        return $this->send('history', ['channel' => $channel]);
-    }
+		return $this->send('broadcast', $params);
+	}
 
-    /**
-     * Unsubscribe user from channel.
-     *
-     * @param string $user_id
-     * @param string $channel
-     * @return mixed
-     */
-    public function unsubscribe($user_id, $channel = null)
-    {
-        $params = ['user' => (string) $user_id];
+	/**
+	 * Get channel presence information (all clients currently subscribed on this channel).
+	 *
+	 * @param string $channel
+	 *
+	 * @return mixed
+	 */
+	public function presence($channel)
+	{
+		return $this->send('presence', ['channel' => $channel]);
+	}
 
-        if (! is_null($channel)) {
-            $params['channel'] = $channel;
-        }
+	/**
+	 * Get channel history information (list of last messages sent into channel).
+	 *
+	 * @param string $channel
+	 *
+	 * @return mixed
+	 */
+	public function history($channel)
+	{
+		return $this->send('history', ['channel' => $channel]);
+	}
 
-        return $this->send('unsubscribe', $params);
-    }
+	/**
+	 * Unsubscribe user from channel.
+	 *
+	 * @param string $user_id
+	 * @param string $channel
+	 *
+	 * @return mixed
+	 */
+	public function unsubscribe($user_id, $channel = null)
+	{
+		$params = ['user' => (string) $user_id];
 
-    /**
-     * Disconnect user by its ID.
-     *
-     * @param string $user_id
-     * @return mixed
-     */
-    public function disconnect($user_id)
-    {
-        return $this->send('disconnect', ['user' => (string) $user_id]);
-    }
+		if (!is_null($channel)) {
+			$params['channel'] = $channel;
+		}
 
-    /**
-     * Get channels information (list of currently active channels).
-     *
-     * @return mixed
-     */
-    public function channels()
-    {
-        return $this->send('channels');
-    }
+		return $this->send('unsubscribe', $params);
+	}
 
-    /**
-     * Get stats information about running server nodes.
-     *
-     * @return mixed
-     */
-    public function stats()
-    {
-        return $this->send('stats');
-    }
+	/**
+	 * Disconnect user by its ID.
+	 *
+	 * @param string $user_id
+	 *
+	 * @return mixed
+	 */
+	public function disconnect($user_id)
+	{
+		return $this->send('disconnect', ['user' => (string) $user_id]);
+	}
 
-    /**
-     * Generate token.
-     *
-     * @param string $userOrClient
-     * @param string $timestampOrChannel
-     * @param string $info
-     * @return string
-     */
-    public function generateToken($userOrClient, $timestampOrChannel, $info = '')
-    {
-        $ctx = hash_init('sha256', HASH_HMAC, $this->getSecret());
-        hash_update($ctx, (string) $userOrClient);
-        hash_update($ctx, (string) $timestampOrChannel);
-        hash_update($ctx, (string) $info);
+	/**
+	 * Get channels information (list of currently active channels).
+	 *
+	 * @return mixed
+	 */
+	public function channels()
+	{
+		return $this->send('channels');
+	}
 
-        return hash_final($ctx);
-    }
+	/**
+	 * Get stats information about running server nodes.
+	 *
+	 * @return mixed
+	 */
+	public function stats()
+	{
+		return $this->send('stats');
+	}
 
-    /**
-     * Generate api sign.
-     *
-     * @param string $data
-     * @return string
-     */
-    public function generateApiSign($data)
-    {
-        $ctx = hash_init('sha256', HASH_HMAC, $this->getSecret());
-        hash_update($ctx, (string) $data);
+	/**
+	 * @deprecated https://centrifugal.github.io/centrifugo/misc/migrate/
+	 * TODO replace for JWT generation
+	 * Generate token.
+	 *
+	 * @param string $userOrClient
+	 * @param string $timestampOrChannel
+	 * @param string $info
+	 *
+	 * @return string
+	 */
+	/*public function generateToken($userOrClient, $timestampOrChannel, $info = '')
+	{
+		$ctx = hash_init('sha256', HASH_HMAC, $this->getSecret());
+		hash_update($ctx, (string) $userOrClient);
+		hash_update($ctx, (string) $timestampOrChannel);
+		hash_update($ctx, (string) $info);
 
-        return hash_final($ctx);
-    }
+		return hash_final($ctx);
+	}*/
 
-    /**
-     * Get secret key.
-     *
-     * @return string
-     */
-    protected function getSecret()
-    {
-        return $this->config['secret'];
-    }
+	/**
+	 * Generate api sign.
+	 *
+	 * @param string $data
+	 *
+	 * @return string
+	 */
+	public function generateApiSign($data)
+	{
+		$ctx = hash_init('sha256', HASH_HMAC, $this->getSecret());
+		hash_update($ctx, (string) $data);
 
-    /**
-     * Send message to centrifuge server.
-     *
-     * @param  string $method
-     * @param  array $params
-     * @return mixed
-     */
-    protected function send($method, array $params = [])
-    {
-        try {
-            if ($this->config['redis_api'] === true && ! is_null($this->redisClient) && in_array($method,
-                    $this->redisMethods)) {
-                $result = $this->redisSend($method, $params);
-            } else {
-                $result = $this->httpSend($method, $params);
-            }
-        } catch (Exception $e) {
-            $result = [
-                'method' => $method,
-                'error'  => $e->getMessage(),
-                'body'   => $params,
-            ];
-        }
+		return hash_final($ctx);
+	}
 
-        return $result;
-    }
+	/**
+	 * Get secret key.
+	 *
+	 * @return string
+	 */
+	protected function getSecret()
+	{
+		return $this->config['secret'];
+	}
 
-    /**
-     * Send message to centrifuge server from http client.
-     *
-     * @param  string $method
-     * @param  array $params
-     * @return mixed
-     */
-    protected function httpSend($method, array $params = [])
-    {
-        $json = json_encode(['method' => $method, 'params' => $params]);
+	/**
+	 * Send message to centrifuge server.
+	 *
+	 * @param  string $method
+	 * @param  array  $params
+	 *
+	 * @return mixed
+	 */
+	protected function send($method, array $params = [])
+	{
+		try {
+			if ($this->config['redis_api'] === true && !is_null($this->redisClient) && in_array($method,
+					$this->redisMethods)) {
+				$result = $this->redisSend($method, $params);
+			} else {
+				$result = $this->httpSend($method, $params);
+			}
+		} catch (Exception $e) {
+			$result = [
+				'method' => $method,
+				'error'  => $e->getMessage(),
+				'body'   => $params,
+			];
+		}
 
-        $headers = [
-            'Content-type' => 'application/json',
-            'X-API-Sign'   => $this->generateApiSign($json),
-        ];
+		return $result;
+	}
 
-        try {
-            $url = parse_url($this->prepareUrl());
+	/**
+	 * Send message to centrifuge server from http client.
+	 *
+	 * @param  string $method
+	 * @param  array  $params
+	 *
+	 * @return mixed
+	 */
+	protected function httpSend($method, array $params = [])
+	{
+		$json = json_encode(['method' => $method, 'params' => $params]);
 
-            $config = collect([
-                'headers'     => $headers,
-                'body'        => $json,
-                'http_errors' => false,
-            ]);
+		$headers = [
+			'Content-type'  => 'application/json',
+			'Authorization' => 'apikey ' . env('CENTRIFUGE_API_KEY'),
+		];
 
-            if ($url['scheme'] == 'https') {
-                $config->put('verify', collect($this->config)->get('verify', false));
+		try {
+			$url = parse_url($this->prepareUrl());
 
-                if (collect($this->config)->get('ssl_key')) {
-                    $config->put('ssl_key', collect($this->config)->get('ssl_key'));
-                }
-            }
+			$config = collect([
+				'headers'     => $headers,
+				'body'        => $json,
+				'http_errors' => false,
+			]);
 
-            $response = $this->httpClient->post($this->prepareUrl(), $config->toArray());
+			if ($url['scheme'] == 'https') {
+				$config->put('verify', collect($this->config)->get('verify', false));
 
-            $finally = json_decode((string) $response->getBody(), true)[0];
-        } catch (ClientException $e) {
-            throw $e;
-        }
+				if (collect($this->config)->get('ssl_key')) {
+					$config->put('ssl_key', collect($this->config)->get('ssl_key'));
+				}
+			}
 
-        return $finally;
-    }
+			$response = $this->httpClient->post($this->prepareUrl(), $config->toArray());
 
-    /**
-     * Prepare URL to send the http request.
-     *
-     * @return string
-     */
-    protected function prepareUrl()
-    {
-        $address = rtrim($this->config['url'], '/');
+			$finally = json_decode((string) $response->getBody(), true);
+		} catch (ClientException $e) {
+			throw $e;
+		}
 
-        if (substr_compare($address, static::API_PATH, -strlen(static::API_PATH)) !== 0) {
-            $address .= static::API_PATH;
-        }
-        $address .= '/';
+		return $finally;
+	}
 
-        return $address;
-    }
+	/**
+	 * Prepare URL to send the http request.
+	 *
+	 * @return string
+	 */
+	protected function prepareUrl()
+	{
+		$address = rtrim($this->config['url'], '/');
 
-    /**
-     * Send message to centrifuge server from redis client.
-     * @param $method
-     * @param array $params
-     * @return array
-     * @throws PredisException
-     */
-    protected function redisSend($method, array $params = [])
-    {
-        $json = json_encode(['method' => $method, 'params' => $params]);
+		if (substr_compare($address, static::API_PATH, -strlen(static::API_PATH)) !== 0) {
+			$address .= static::API_PATH;
+		}
 
-        try {
-            $this->redisClient->rpush($this->getQueueKey(), $json);
-        } catch (PredisException $e) {
-            throw $e;
-        }
+		return $address;
+	}
 
-        return [
-            'method' => $method,
-            'error'  => null,
-            'body'   => null,
-        ];
-    }
+	/**
+	 * Send message to centrifuge server from redis client.
+	 *
+	 * @param       $method
+	 * @param array $params
+	 *
+	 * @return array
+	 * @throws PredisException
+	 */
+	protected function redisSend($method, array $params = [])
+	{
+		$json = json_encode(['method' => $method, 'params' => $params]);
 
-    /**
-     * Get queue key for redis engine.
-     *
-     * @return string
-     */
-    protected function getQueueKey()
-    {
-        $apiKey = $this->config['redis_prefix'].self::REDIS_SUFFIX;
-        $numShards = (int) $this->config['redis_num_shards'];
+		try {
+			$this->redisClient->rpush($this->getQueueKey(), $json);
+		} catch (PredisException $e) {
+			throw $e;
+		}
 
-        if ($numShards > 0) {
-            return sprintf('%s.%d', $apiKey, rand(0, $numShards - 1));
-        }
+		return [
+			'method' => $method,
+			'error'  => null,
+			'body'   => null,
+		];
+	}
 
-        return $apiKey;
-    }
+	/**
+	 * Get queue key for redis engine.
+	 *
+	 * @return string
+	 */
+	protected function getQueueKey()
+	{
+		$apiKey    = $this->config['redis_prefix'] . self::REDIS_SUFFIX;
+		$numShards = (int) $this->config['redis_num_shards'];
+
+		if ($numShards > 0) {
+			return sprintf('%s.%d', $apiKey, rand(0, $numShards - 1));
+		}
+
+		return $apiKey;
+	}
 }

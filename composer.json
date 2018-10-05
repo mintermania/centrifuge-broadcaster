@@ -1,7 +1,7 @@
 {
     "name": "laracomponents/centrifuge-broadcaster",
     "type": "library",
-    "description": "Centrifuge broadcaster for laravel >= 5.3",
+    "description": "Centrifuge broadcaster for laravel >= 5.7",
     "keywords": ["laravel", "centrifuge", "centrifugo", "broadcaster"],
     "license": "MIT",
     "authors": [
@@ -16,10 +16,10 @@
         "source": "https://github.com/LaraComponents/centrifuge-broadcaster"
     },
     "require": {
-        "php": ">=5.6.4",
-        "guzzlehttp/guzzle": "^6.2",
-        "predis/predis": "^1.1",
-        "illuminate/broadcasting": "^5.3"
+        "php": "^7.1.3",
+        "illuminate/broadcasting": "5.7.*",
+        "guzzlehttp/guzzle": "^6.3.3",
+        "predis/predis": "^1.1"
     },
     "require-dev": {
         "orchestra/testbench": "^3.3",
