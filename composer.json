@@ -1,5 +1,5 @@
 {
-    "name": "laracomponents/centrifuge-broadcaster",
+    "name": "emprove/centrifuge-broadcaster",
     "type": "library",
     "description": "Centrifuge broadcaster for laravel >= 5.7",
     "keywords": ["laravel", "centrifuge", "centrifugo", "broadcaster"],
@@ -10,10 +10,10 @@
             "email": "stenin.nikita@gmail.com"
         }
     ],
-    "homepage": "https://github.com/LaraComponents/centrifuge-broadcaster",
+    "homepage": "https://github.com/emprove/centrifuge-broadcaster",
     "support": {
-        "issues": "https://github.com/LaraComponents/centrifuge-broadcaster/issues",
-        "source": "https://github.com/LaraComponents/centrifuge-broadcaster"
+        "issues": "https://github.com/emprove/centrifuge-broadcaster/issues",
+        "source": "https://github.com/emprove/centrifuge-broadcaster"
     },
     "require": {
         "php": "^7.1.3",
