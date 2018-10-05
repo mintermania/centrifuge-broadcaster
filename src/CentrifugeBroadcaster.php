@@ -52,7 +52,7 @@ class CentrifugeBroadcaster extends Broadcaster
                 }
 
                 $response[$channel] = $result ? [
-                    'sign' => $this->centrifuge->generateToken($client, $channel, $info),
+                    //'sign' => $this->centrifuge->generateToken($client, $channel, $info),
                     'info' => $info,
                 ] : [
                     'status' => 403,
