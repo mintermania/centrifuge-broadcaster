@@ -10,109 +10,119 @@ use LaraComponents\Centrifuge\Contracts\Centrifuge as CentrifugeContract;
 
 class CentrifugeBroadcaster extends Broadcaster
 {
-    /**
-     * The Centrifuge SDK instance.
-     *
-     * @var \LaraComponents\Centrifuge\Contracts\Centrifuge
-     */
-    protected $centrifuge;
+	/**
+	 * The Centrifuge SDK instance.
+	 *
+	 * @var \LaraComponents\Centrifuge\Contracts\Centrifuge
+	 */
+	protected $centrifuge;
 
-    /**
-     * Create a new broadcaster instance.
-     *
-     * @param  \LaraComponents\Centrifuge\Contracts\Centrifuge  $centrifuge
-     */
-    public function __construct(CentrifugeContract $centrifuge)
-    {
-        $this->centrifuge = $centrifuge;
-    }
+	/**
+	 * Create a new broadcaster instance.
+	 *
+	 * @param  \LaraComponents\Centrifuge\Contracts\Centrifuge $centrifuge
+	 */
+	public function __construct(CentrifugeContract $centrifuge)
+	{
+		$this->centrifuge = $centrifuge;
+	}
 
-    /**
-     * Authenticate the incoming request for a given channel.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return mixed
-     */
-    public function auth($request)
-    {
-        if ($request->user()) {
-            $client = $request->get('client', '');
-            $channels = $request->get('channels', []);
-            $channels = is_array($channels) ? $channels : [$channels];
+	/**
+	 * Authenticate the incoming request for a given channel.
+	 *
+	 * @param  \Illuminate\Http\Request $request
+	 *
+	 * @return mixed
+	 */
+	public function auth($request)
+	{
+		if ($request->user()) {
+			$client   = $request->get('client', '');
+			$channels = $request->get('channels', []);
+			$channels = is_array($channels) ? $channels : [$channels];
 
-            $response = [];
-            $info = json_encode([]);
-            foreach ($channels as $channel) {
-                $channelName = (substr($channel, 0, 1) === '$') ? substr($channel, 1) : $channel;
+			$response = [];
+			$info     = json_encode([]);
 
-                try {
-                    $result = $this->verifyUserCanAccessChannel($request, $channelName);
-                } catch (HttpException $e) {
-                    $result = false;
-                }
+			foreach ($channels as $channel) {
+				$channelName = (substr($channel, 0, 1) === '$')
+					? substr($channel, 1)
+					: $channel;
 
-                $response[$channel] = $result ? [
-                    //'sign' => $this->centrifuge->generateToken($client, $channel, $info),
-                    'info' => $info,
-                ] : [
-                    'status' => 403,
-                ];
-            }
+				try {
+					$result = $this->verifyUserCanAccessChannel($request, $channelName);
+				} catch (HttpException $e) {
+					$result = false;
+				}
 
-            return response()->json($response);
-        } else {
-            throw new HttpException(401);
-        }
-    }
+				$response[$channel] = $result ? [
+					'info' => $info,
+				] : [
+					'status' => 403,
+				];
+			}
 
-    /**
-     * Return the valid authentication response.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  mixed  $result
-     * @return mixed
-     */
-    public function validAuthenticationResponse($request, $result)
-    {
-        return $result;
-    }
+			return response()->json($response);
+		} else {
+			throw new HttpException(401);
+		}
+	}
 
-    /**
-     * Broadcast the given event.
-     *
-     * @param  array  $channels
-     * @param  string  $event
-     * @param  array  $payload
-     * @return void
-     */
-    public function broadcast(array $channels, $event, array $payload = [])
-    {
-        $payload['event'] = $event;
+	/**
+	 * Return the valid authentication response.
+	 *
+	 * @param  \Illuminate\Http\Request $request
+	 * @param  mixed                    $result
+	 *
+	 * @return mixed
+	 */
+	public function validAuthenticationResponse($request, $result)
+	{
+		return $result;
+	}
 
-        $socket = null;
-        if (array_key_exists('socket', $payload)) {
-            $socket = $payload['socket'];
-            unset($payload['socket']);
-        }
+	/**
+	 * Broadcast the given event.
+	 *
+	 * @param  array  $channels
+	 * @param  string $event
+	 * @param  array  $payload
+	 *
+	 * @return void
+	 */
+	public function broadcast(array $channels, $event, array $payload = [])
+	{
+		$payload['event'] = $event;
 
-        $response = $this->centrifuge->broadcast($this->formatChannels($channels), $payload, $socket);
+		$socket = null;
 
-        if (is_array($response) && is_null($response['error'])) {
-            return;
-        }
+		if (array_key_exists('socket', $payload)) {
+			$socket = $payload['socket'];
+			unset($payload['socket']);
+		}
 
-        throw new BroadcastException(
-            $response['error'] instanceof Exception ? $response['error']->getMessage() : $response['error']
-        );
-    }
+		$response = $this->centrifuge->broadcast($this->formatChannels($channels), $payload, $socket);
 
-    /**
-     * Get the Centrifuge instance.
-     *
-     * @return \LaraComponents\Centrifuge\Contracts\Centrifuge
-     */
-    public function getCentrifuge()
-    {
-        return $this->centrifuge;
-    }
+		if (is_array($response) && empty($response) && !isset($response['error'])) {
+			return;
+		}
+
+		if (isset($response['error'])) {
+			throw new BroadcastException(
+				$response['error'] instanceof Exception
+					? $response['error']->getMessage()
+					: $response['error']
+			);
+		}
+	}
+
+	/**
+	 * Get the Centrifuge instance.
+	 *
+	 * @return \LaraComponents\Centrifuge\Contracts\Centrifuge
+	 */
+	public function getCentrifuge()
+	{
+		return $this->centrifuge;
+	}
 }

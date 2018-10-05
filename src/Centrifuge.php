@@ -46,8 +46,10 @@ class Centrifuge implements CentrifugeContract
 	{
 		$config['url'] = env('CENTRIFUGE_URL');
 
-		if (is_null($httpClient)) {
+		if (empty($httpClient)) {
 			$this->httpClient = new Client();
+		} else {
+			$this->httpClient = $httpClient;
 		}
 
 		$this->redisClient = $redisClient;
