@@ -64,6 +64,7 @@ class Centrifuge implements CentrifugeContract
 	{
 		$defaults = [
 			'url'              => 'http://127.0.0.1:8000',
+			'api_key'          => null,
 			'secret'           => null,
 			'redis_api'        => false,
 			'redis_prefix'     => 'centrifugo',
@@ -284,7 +285,7 @@ class Centrifuge implements CentrifugeContract
 
 		$headers = [
 			'Content-type'  => 'application/json',
-			'Authorization' => 'apikey ' . env('CENTRIFUGE_API_KEY'),
+			'Authorization' => 'apikey ' . collect($this->config)->get('api_key'),
 		];
 
 		try {
