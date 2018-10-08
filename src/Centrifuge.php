@@ -3,27 +3,21 @@
 namespace LaraComponents\Centrifuge;
 
 use Exception;
-use Predis\PredisException;
-use Predis\Client as RedisClient;
-use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use LaraComponents\Centrifuge\Contracts\Centrifuge as CentrifugeContract;
 
 class Centrifuge implements CentrifugeContract
 {
-	const REDIS_SUFFIX = '.api';
-
+	/**
+	 * Centrifugo endpoint to deal with HTTP API. Default is "/api".
+	 */
 	const API_PATH = '/api';
 
 	/**
 	 * @var \GuzzleHttp\Client
 	 */
 	protected $httpClient;
-
-	/**
-	 * @var \Predis\Client
-	 */
-	protected $redisClient;
 
 	/**
 	 * @var array
@@ -38,48 +32,13 @@ class Centrifuge implements CentrifugeContract
 	/**
 	 * Create a new Centrifuge instance.
 	 *
-	 * @param array               $config
-	 * @param HttpClient  $httpClient
-	 * @param \Predis\Client|null $redisClient
+	 * @param array  $config
+	 * @param Client $httpClient
 	 */
-	public function __construct(
-		array $config = [],
-		HttpClient $httpClient = null,
-		?RedisClient $redisClient = null)
+	public function __construct(array $config = [], Client $httpClient = null)
 	{
 		$this->httpClient = $httpClient;
-		$this->redisClient = $redisClient;
-
-		$this->config = $this->initConfiguration($config);
-	}
-
-	/**
-	 * Init centrifuge configuration.
-	 *
-	 * @param  array $config
-	 *
-	 * @return array
-	 */
-	protected function initConfiguration(array $config)
-	{
-		$defaults = [
-			'url'              => 'http://127.0.0.1:8000',
-			'api_key'          => null,
-			'secret'           => null,
-			'redis_api'        => false,
-			'redis_prefix'     => 'centrifugo',
-			'redis_num_shards' => 0,
-			'ssl_key'          => null,
-			'verify'           => true,
-		];
-
-		foreach ($config as $key => $value) {
-			if (array_key_exists($key, $defaults)) {
-				$defaults[$key] = $value;
-			}
-		}
-
-		return $defaults;
+		$this->config     = $config;
 	}
 
 	/**
@@ -198,27 +157,6 @@ class Centrifuge implements CentrifugeContract
 	}
 
 	/**
-	 * @deprecated https://centrifugal.github.io/centrifugo/misc/migrate/
-	 * TODO replace for JWT generation
-	 * Generate token.
-	 *
-	 * @param string $userOrClient
-	 * @param string $timestampOrChannel
-	 * @param string $info
-	 *
-	 * @return string
-	 */
-	/*public function generateToken($userOrClient, $timestampOrChannel, $info = '')
-	{
-		$ctx = hash_init('sha256', HASH_HMAC, $this->getSecret());
-		hash_update($ctx, (string) $userOrClient);
-		hash_update($ctx, (string) $timestampOrChannel);
-		hash_update($ctx, (string) $info);
-
-		return hash_final($ctx);
-	}*/
-
-	/**
 	 * Generate api sign.
 	 *
 	 * @param string $data
@@ -254,12 +192,7 @@ class Centrifuge implements CentrifugeContract
 	protected function send($method, array $params = [])
 	{
 		try {
-			if ($this->config['redis_api'] === true && !is_null($this->redisClient) && in_array($method,
-					$this->redisMethods)) {
-				$result = $this->redisSend($method, $params);
-			} else {
-				$result = $this->httpSend($method, $params);
-			}
+			$result = $this->httpSend($method, $params);
 		} catch (Exception $e) {
 			$result = [
 				'method' => $method,
@@ -332,45 +265,23 @@ class Centrifuge implements CentrifugeContract
 	}
 
 	/**
-	 * Send message to centrifuge server from redis client.
+	 * @deprecated https://centrifugal.github.io/centrifugo/misc/migrate/
+	 * TODO replace for JWT generation
+	 * Generate token.
 	 *
-	 * @param       $method
-	 * @param array $params
-	 *
-	 * @return array
-	 * @throws PredisException
-	 */
-	protected function redisSend($method, array $params = [])
-	{
-		$json = json_encode(['method' => $method, 'params' => $params]);
-
-		try {
-			$this->redisClient->rpush($this->getQueueKey(), $json);
-		} catch (PredisException $e) {
-			throw $e;
-		}
-
-		return [
-			'method' => $method,
-			'error'  => null,
-			'body'   => null,
-		];
-	}
-
-	/**
-	 * Get queue key for redis engine.
+	 * @param string $userOrClient
+	 * @param string $timestampOrChannel
+	 * @param string $info
 	 *
 	 * @return string
 	 */
-	protected function getQueueKey()
+	/*public function generateToken($userOrClient, $timestampOrChannel, $info = '')
 	{
-		$apiKey    = $this->config['redis_prefix'] . self::REDIS_SUFFIX;
-		$numShards = (int) $this->config['redis_num_shards'];
+		$ctx = hash_init('sha256', HASH_HMAC, $this->getSecret());
+		hash_update($ctx, (string) $userOrClient);
+		hash_update($ctx, (string) $timestampOrChannel);
+		hash_update($ctx, (string) $info);
 
-		if ($numShards > 0) {
-			return sprintf('%s.%d', $apiKey, rand(0, $numShards - 1));
-		}
-
-		return $apiKey;
-	}
+		return hash_final($ctx);
+	}*/
 }

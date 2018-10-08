@@ -32,8 +32,6 @@ class TestCase extends Orchestra
             'driver' => 'centrifuge',
             'secret' => 'f95bf295-bee6-4259-8912-0a58f4ecd30e',
             'url' => 'http://localhost:8000',
-            'redis_api' => false,
-            'redis_connection' => 'default',
         ]);
     }
 }

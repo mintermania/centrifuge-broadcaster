@@ -2,8 +2,7 @@
 
 namespace LaraComponents\Centrifuge;
 
-use Predis\Client as RedisClient;
-use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\Client;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Broadcasting\BroadcastManager;
 
@@ -30,15 +29,9 @@ class CentrifugeServiceProvider extends ServiceProvider
 	{
 		$this->app->singleton('centrifuge', function ($app) {
 			$config = $app->make('config')->get('broadcasting.connections.centrifuge');
-			$http   = new HttpClient();
-			$redis  = $app->make('redis')->connection($config['redis_connection']);
+			$http   = new Client();
 
-			// for laravel 5.4
-			if (!($redis instanceof RedisClient)) {
-				$redis = $redis->client();
-			}
-
-			return new Centrifuge($config, $http, $redis);
+			return new Centrifuge($config, $http);
 		});
 
 		$this->app->alias('centrifuge', 'LaraComponents\Centrifuge\Centrifuge');

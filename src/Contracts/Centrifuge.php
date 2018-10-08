@@ -72,22 +72,22 @@ interface Centrifuge
     public function stats();
 
     /**
-     * @deprecated https://centrifugal.github.io/centrifugo/misc/migrate/
-     * TODO replace for JWT generation
-     * Generate token.
-     *
-     * @param string $userOrClient
-     * @param string $timestampOrChannel
-     * @param string $info
-     * @return string
-     */
-    //public function generateToken($userOrClient, $timestampOrChannel, $info = '');
-
-    /**
      * Generate api sign.
      *
      * @param string $data
      * @return string
      */
     public function generateApiSign($data);
+    
+	/**
+	 * @deprecated https://centrifugal.github.io/centrifugo/misc/migrate/
+	 * TODO replace for JWT generation
+	 * Generate token.
+	 *
+	 * @param string $userOrClient
+	 * @param string $timestampOrChannel
+	 * @param string $info
+	 * @return string
+	 */
+	//public function generateToken($userOrClient, $timestampOrChannel, $info = '');
 }

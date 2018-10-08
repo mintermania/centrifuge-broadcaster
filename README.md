@@ -1,29 +1,23 @@
-<h1 align="center">Centrifuge Broadcaster for Laravel 5</h1>
-
-<p align="center">
-<a href="https://travis-ci.org/LaraComponents/centrifuge-broadcaster"><img src="https://travis-ci.org/LaraComponents/centrifuge-broadcaster.svg?branch=master" alt="Build Status"></a>
-<a href="https://github.com/LaraComponents/centrifuge-broadcaster/releases"><img src="https://img.shields.io/github/release/LaraComponents/centrifuge-broadcaster.svg?style=flat-square" alt="Latest Version"></a>
-<a href="https://scrutinizer-ci.com/g/LaraComponents/centrifuge-broadcaster"><img src="https://img.shields.io/scrutinizer/g/LaraComponents/centrifuge-broadcaster.svg?style=flat-square" alt="Quality Score"></a>
-<a href="https://styleci.io/repos/77400544"><img src="https://styleci.io/repos/77400544/shield" alt="StyleCI"></a>
-<a href="https://packagist.org/packages/LaraComponents/centrifuge-broadcaster"><img src="https://img.shields.io/packagist/dt/LaraComponents/centrifuge-broadcaster.svg?style=flat-square" alt="Total Downloads"></a>
-<a href="https://github.com/LaraComponents/centrifuge-broadcaster/blob/master/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="Software License"></a>
-</p>
+### Outdated! Maybe some diff with IRL.
+1. This package forked from "LaraComponents" to fit new Centrifugo v2.
+2. Drop Redis support (v2 don't support it), see official [migration guide](https://centrifugal.github.io/centrifugo/misc/migrate/).
+3. Cut generateToken(user id, timestamp, info) method (v2 uses only jwt auth workflow).
 
 ## Introduction
-Centrifuge broadcaster for laravel >= 5.3
+Centrifuge broadcaster for laravel >= 5.7
 
 ## Requirements
 
-- PHP 5.6.4+ or newer
-- Laravel 5.3 or newer
-- Centrifugo Server 1.6.1 or newer (see [here](https://github.com/centrifugal/centrifugo))
+- PHP 7.1.3+ or newer (tested on 7.2.10) 
+- Laravel 5.3+ or newer (tested on 5.7.8)
+- Centrifugo Server 2 or newer (see [here](https://github.com/centrifugal/centrifugo))
 
 ## Installation
 
 Require this package with composer:
 
 ```bash
-composer require laracomponents/centrifuge-broadcaster
+composer require emprove/centrifuge-broadcaster
 ```
 
 Open your config/app.php and add the following to the providers array:
@@ -43,29 +37,12 @@ Open your config/broadcasting.php and add the following to it:
 ```php
 'connections' => [
     'centrifuge' => [
-        'driver' => 'centrifuge',
-        'secret' => env('CENTRIFUGE_SECRET'), // you secret key
-        'url' => env('CENTRIFUGE_URL', 'http://localhost:8000'), // centrifuge api url
-        'redis_api' => env('CENTRIFUGE_REDIS_API', false), // enable or disable Redis API
-        'redis_connection' => env('CENTRIFUGE_REDIS_CONNECTION', 'default'), // name of redis connection
-        'redis_prefix' => env('CENTRIFUGE_REDIS_PREFIX', 'centrifugo'), // prefix name for queue in Redis
-        'redis_num_shards' => env('CENTRIFUGE_REDIS_NUM_SHARDS', 0), // number of shards for redis API queue
-        'verify' => env('CENTRIFUGE_VERIFY', false), // Verify host ssl if centrifuge uses this
-        'ssl_key' => env('CENTRIFUGE_SSL_KEY', null), // Self-Signed SSl Key for Host (require verify=true)
-    ],
-    // ...
-],
-```
-
-For the redis configuration, add a new connection in config/database.php
-
-```php
-'redis' => [
-    'centrifuge' => [
-        'host' => env('REDIS_HOST', '127.0.0.1'),,
-        'password' => env('REDIS_PASSWORD', null),
-        'port' =>  env('REDIS_PORT', 6379),
-        'database' => 0,
+        'driver'  => 'centrifuge',
+        'url'     => env('CENTRIFUGE_URL', 'http://127.0.0.1:8000'),
+        'secret'  => env('CENTRIFUGE_SECRET', null),
+        'api_key' => env('CENTRIFUGE_API_KEY', null),
+        'ssl_key' => env('CENTRIFUGE_SSL_KEY', null),
+        'verify'  => env('CENTRIFUGE_VERIFY', false),
     ],
     // ...
 ],
@@ -76,10 +53,6 @@ You can also add a configuration to your .env file:
 ```
 CENTRIFUGE_SECRET=very-long-secret-key
 CENTRIFUGE_URL=http://localhost:8000
-CENTRIFUGE_REDIS_API=false
-CENTRIFUGE_REDIS_CONNECTION=centrifuge
-CENTRIFUGE_REDIS_PREFIX=centrifugo
-CENTRIFUGE_REDIS_NUM_SHARDS=0
 CENTRIFUGE_SSL_KEY=/etc/ssl/some.pem
 CENTRIFUGE_VERIFY=false
 ```
@@ -113,9 +86,6 @@ class ExampleController extends Controller
         $centrifuge->publish('channel-name', [
             'key' => 'value'
         ]);
-
-        // Generate token
-        $token = $centrifuge->generateToken('user id', 'timestamp', 'info');
 
         // Generate api sign
         $apiSign = $centrifuge->generateApiSign('data');
