@@ -1,4 +1,4 @@
-### Outdated! Maybe some diff with IRL.
+### Attention! Maybe some diff with IRL.
 1. This package forked from "LaraComponents" to fit new Centrifugo v2.
 2. Drop Redis support (v2 don't support it), see official [migration guide](https://centrifugal.github.io/centrifugo/misc/migrate/).
 3. Update generateToken(user id, timestamp, info) method (v2 uses only jwt auth workflow).
@@ -111,7 +111,7 @@ class ExampleController extends Controller
 | disconnect(string $user_id) | Disconnect user by its ID. |
 | channels() | Get channels information (list of currently active channels). |
 | stats() | Get stats information about running server nodes. |
-| generateToken(string $userOrClient, string $timestampOrChannel, string $info = "")  | Generate token. |
+| generateToken(string $userId) | Generate JWT token for client. |
 | generateApiSign(string $data) | Generate api sign. |
 
 ## License
