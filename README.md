@@ -1,7 +1,7 @@
 ### Outdated! Maybe some diff with IRL.
 1. This package forked from "LaraComponents" to fit new Centrifugo v2.
 2. Drop Redis support (v2 don't support it), see official [migration guide](https://centrifugal.github.io/centrifugo/misc/migrate/).
-3. Cut generateToken(user id, timestamp, info) method (v2 uses only jwt auth workflow).
+3. Update generateToken(user id, timestamp, info) method (v2 uses only jwt auth workflow).
 
 ## Introduction
 Centrifuge broadcaster for laravel >= 5.7
@@ -37,12 +37,14 @@ Open your config/broadcasting.php and add the following to it:
 ```php
 'connections' => [
     'centrifuge' => [
-        'driver'  => 'centrifuge',
-        'url'     => env('CENTRIFUGE_URL', 'http://127.0.0.1:8000'),
-        'secret'  => env('CENTRIFUGE_SECRET', null),
-        'api_key' => env('CENTRIFUGE_API_KEY', null),
-        'ssl_key' => env('CENTRIFUGE_SSL_KEY', null),
-        'verify'  => env('CENTRIFUGE_VERIFY', false),
+        'driver'       => 'centrifuge',
+        'url'          => env('CENTRIFUGE_URL', 'http://127.0.0.1:8000'),
+        'token_ttl'    => env('CENTRIFUGE_TOKEN_TTL', 3600),
+        'token_issuer' => env('APP_URL', 'default'),
+        'secret'       => env('CENTRIFUGE_SECRET', null),
+        'api_key'      => env('CENTRIFUGE_API_KEY', null),
+        'ssl_key'      => env('CENTRIFUGE_SSL_KEY', null),
+        'verify'       => env('CENTRIFUGE_VERIFY', false),
     ],
     // ...
 ],
@@ -51,9 +53,11 @@ Open your config/broadcasting.php and add the following to it:
 You can also add a configuration to your .env file:
 
 ```
+CENTRIFUGE_API_KEY=very-long-secret-api-key
 CENTRIFUGE_SECRET=very-long-secret-key
 CENTRIFUGE_URL=http://localhost:8000
 CENTRIFUGE_SSL_KEY=/etc/ssl/some.pem
+CENTRIFUGE_TOKEN_TTL=3600 # seconds
 CENTRIFUGE_VERIFY=false
 ```
 

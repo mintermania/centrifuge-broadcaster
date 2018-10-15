@@ -6,6 +6,8 @@ use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use LaraComponents\Centrifuge\Contracts\Centrifuge as CentrifugeContract;
+use Lcobucci\JWT\Builder;
+use Lcobucci\JWT\Signer\Hmac\Sha256;
 
 class Centrifuge implements CentrifugeContract
 {
@@ -23,11 +25,6 @@ class Centrifuge implements CentrifugeContract
 	 * @var array
 	 */
 	protected $config;
-
-	/**
-	 * @var array
-	 */
-	protected $redisMethods = ['publish', 'broadcast', 'unsubscribe', 'disconnect'];
 
 	/**
 	 * Create a new Centrifuge instance.
@@ -265,23 +262,22 @@ class Centrifuge implements CentrifugeContract
 	}
 
 	/**
-	 * @deprecated https://centrifugal.github.io/centrifugo/misc/migrate/
-	 * TODO replace for JWT generation
-	 * Generate token.
+	 * Generate JWT token for client.
 	 *
-	 * @param string $userOrClient
-	 * @param string $timestampOrChannel
-	 * @param string $info
+	 * @param string $userId
 	 *
 	 * @return string
 	 */
-	/*public function generateToken($userOrClient, $timestampOrChannel, $info = '')
+	public function generateToken(string $userId)
 	{
-		$ctx = hash_init('sha256', HASH_HMAC, $this->getSecret());
-		hash_update($ctx, (string) $userOrClient);
-		hash_update($ctx, (string) $timestampOrChannel);
-		hash_update($ctx, (string) $info);
+		$signer = new Sha256();
 
-		return hash_final($ctx);
-	}*/
+		$token = (new Builder())->setIssuer($this->config['token_issuer'])
+			->setExpiration(now()->getTimestamp() + $this->config['token_ttl'])
+			->set('sub', $userId)
+			->sign($signer, $this->config['secret'])
+			->getToken();
+
+		return $token;
+	}
 }
