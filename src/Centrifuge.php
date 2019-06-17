@@ -280,4 +280,25 @@ class Centrifuge implements CentrifugeContract
 
 		return $token;
 	}
+
+    /**
+     * Generate JWT privateChanelToken for client.
+     *
+     * @param string $client
+     * @param string $channel
+     *
+     * @return Token
+     */
+    public function privateChanelToken(string $client, string $channel){
+        $signer = new Sha256();
+
+        $token = (new Builder())->setIssuer($this->config['token_issuer'])
+            ->setExpiration(now()->getTimestamp() + $this->config['token_ttl'])
+            ->set('client', $client)
+            ->set('channel', $channel)
+            ->sign($signer, $this->config['secret'])
+            ->getToken();
+
+        return $token;
+    }
 }
