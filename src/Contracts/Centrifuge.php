@@ -2,6 +2,8 @@
 
 namespace LaraComponents\Centrifuge\Contracts;
 
+use Lcobucci\JWT\Token;
+
 interface Centrifuge
 {
 	/**
@@ -86,12 +88,21 @@ interface Centrifuge
 	 */
 	public function generateApiSign($data);
 
-	/**
-	 * Generate JWT token for client.
-	 *
-	 * @param string $userId
-	 *
-	 * @return string
-	 */
+    /**
+     * Generate JWT token for client.
+     *
+     * @param string $userId
+     *
+     * @return string
+     */
 	public function generateToken(string $userId);
+
+    /**
+     * Generate JWT token for client.
+     *
+     * @param string $client
+     * @param string $channel
+     * @return Token
+     */
+    public function privateChanelToken(string $client, string $channel);
 }

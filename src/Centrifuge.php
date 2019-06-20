@@ -8,6 +8,8 @@ use GuzzleHttp\Exception\ClientException;
 use LaraComponents\Centrifuge\Contracts\Centrifuge as CentrifugeContract;
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
+use Lcobucci\JWT\Signer\Key;
+use Lcobucci\JWT\Token;
 
 class Centrifuge implements CentrifugeContract
 {
@@ -266,17 +268,16 @@ class Centrifuge implements CentrifugeContract
 	 *
 	 * @param string $userId
 	 *
-	 * @return string
+	 * @return Token
 	 */
 	public function generateToken(string $userId)
 	{
 		$signer = new Sha256();
 
-		$token = (new Builder())->setIssuer($this->config['token_issuer'])
-			->setExpiration(now()->getTimestamp() + $this->config['token_ttl'])
-			->set('sub', $userId)
-			->sign($signer, $this->config['secret'])
-			->getToken();
+		$token = (new Builder())->issuedBy($this->config['token_issuer'])
+			->expiresAt(now()->getTimestamp() + $this->config['token_ttl'])
+            ->withClaim('sub', $userId)
+			->getToken($signer, new Key($this->config['secret']));
 
 		return $token;
 	}
@@ -292,12 +293,11 @@ class Centrifuge implements CentrifugeContract
     public function privateChanelToken(string $client, string $channel){
         $signer = new Sha256();
 
-        $token = (new Builder())->setIssuer($this->config['token_issuer'])
-            ->setExpiration(now()->getTimestamp() + $this->config['token_ttl'])
-            ->set('client', $client)
-            ->set('channel', $channel)
-            ->sign($signer, $this->config['secret'])
-            ->getToken();
+        $token = (new Builder())->issuedBy($this->config['token_issuer'])
+            ->expiresAt(now()->getTimestamp() + $this->config['token_ttl'])
+            ->withClaim('client', $client)
+            ->withClaim('channel', $channel)
+            ->getToken($signer, new Key($this->config['secret']));
 
         return $token;
     }
