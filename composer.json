@@ -1,13 +1,21 @@
 {
     "name": "luisozparr/centrifuge-broadcaster",
     "type": "library",
-    "description": "Centrifuge broadcaster for laravel >= 5.7",
-    "keywords": ["laravel", "centrifuge", "centrifugo", "broadcaster"],
+    "description": "Centrifuge broadcaster for laravel >= 5.6",
+    "keywords": ["laravel", "centrifuge", "centrifugo", "broadcaster", "websocket"],
     "license": "MIT",
     "authors": [
         {
             "name": "Emprove",
             "email": "skyflap@gmail.com"
+        },
+        {
+            "name": "Nikita Stenin",
+            "email": "stenin.nikita@gmail.com"
+        },
+        {
+            "name": "LuisOzuna",
+            "email": "lgozuna@gmail.com"
         }
     ],
     "homepage": "https://github.com/emprove/centrifuge-broadcaster",
